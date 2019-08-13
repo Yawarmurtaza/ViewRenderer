@@ -19,20 +19,14 @@ namespace WebApplication1.Controllers
 
         public HomeController(IViewRenderer renderer)
         {
-            this.renderer = renderer;
-            // Error CS1503  Argument 1: cannot convert from 'Microsoft.AspNetCore.Mvc.Razor.RazorViewEngineOptions' to 'Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.Mvc.MvcViewOptions>' WebApplication1 C:\Users\yakhuwaj\source\repos\WebApplication1\WebApplication1\Controllers\HomeController.cs    24  Active
-
-            //_viewEngine = viewEngine;
-
-            //IOptions<MvcViewOptions> opt =
-
-            //_viewEngine = new CompositeViewEngine();
+            this.renderer = renderer;            
         }
 
         public async Task<IActionResult> Index()
         {
-            EmailDataModel model = new EmailDataModel { Body = "This is email body | You request has been <strong>submitted!</strong>" };
+            EmailDataModel model = new EmailDataModel { Body = "This is email body | You request has been submitted!" };
             string emailContent = await this.renderer.RenderPartialViewToString<EmailDataModel>(model, "Templates/Email/_EmailView");
+            ViewBag.EmailContent = emailContent;
             return View();
         }
 
