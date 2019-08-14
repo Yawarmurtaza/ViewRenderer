@@ -4,6 +4,6 @@ namespace WebApplication1.Helpers
 {
     public interface IViewRenderer
     {
-        Task<string> RenderPartialViewToString<T>(T model, string viewPath);
+        Task<string> RenderPartialViewToString<T>(T dataModel, string partialViewPath);
     }
 }

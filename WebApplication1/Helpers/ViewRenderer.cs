@@ -18,37 +18,37 @@ namespace WebApplication1.Helpers
 {
     public class ViewRenderer : IViewRenderer
     {
-        private readonly IHttpContextAccessor httpContextAccessor;
-        private readonly IRazorViewEngine razorViewEngine;
+        private readonly IHttpContextAccessor httpAccessor;
+        private readonly IRazorViewEngine razorEngine;
         private readonly ITempDataProvider tempDataProvider;
-        private readonly IOptions<MvcViewOptions> viewOptions;
+        private readonly IOptions<MvcViewOptions> options;
 
-        public ViewRenderer(IOptions<MvcViewOptions> viewOptions, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IHttpContextAccessor httpContextAccessor)
+        public ViewRenderer(IOptions<MvcViewOptions> options, IRazorViewEngine razorEngine, ITempDataProvider tempDataProvider, IHttpContextAccessor httpAccessor)
         {
-            this.httpContextAccessor = httpContextAccessor;
-            this.razorViewEngine = razorViewEngine;
+            this.httpAccessor = httpAccessor;
+            this.razorEngine = razorEngine;
             this.tempDataProvider = tempDataProvider;
-            this.viewOptions = viewOptions;
+            this.options = options;
         }
 
-        public async Task<string> RenderPartialViewToString<T>(T model, string partialViewPath)
+        public async Task<string> RenderPartialViewToString<T>(T dataModel, string partialViewPath)
         {
             // we need action context that we will use to find given view path and to construct view context...            
-            IRoutingFeature routingFeature = httpContextAccessor.HttpContext.Features.Get<IRoutingFeature>();
-            ActionContext actionContext = new ActionContext(httpContextAccessor.HttpContext, routingFeature.RouteData, new ActionDescriptor());
+            IRoutingFeature routingFeature = httpAccessor.HttpContext.Features.Get<IRoutingFeature>();
+            ActionContext actionContext = new ActionContext(httpAccessor.HttpContext, routingFeature.RouteData, new ActionDescriptor());
 
-            ViewEngineResult findViewResult = razorViewEngine.FindView(actionContext, partialViewPath, false);
+            ViewEngineResult viewEngineResult = razorEngine.FindView(actionContext, partialViewPath, false);
             IView view;
-            if (findViewResult.Success)
+            if (viewEngineResult.Success)
             {
-                view = findViewResult.View;
+                view = viewEngineResult.View;
             }
             else
             {
-                // view not found ... throw exception...
-                ViewEngineResult getViewResult = razorViewEngine.GetView(null, partialViewPath, false);
-                IEnumerable<string> searchedLocations = getViewResult.SearchedLocations.Concat(findViewResult.SearchedLocations);
-                string errorMessage = string.Join(Environment.NewLine, new[] { $"Unable to find view '{ partialViewPath }'. The following locations were searched:" }.Concat(searchedLocations)); ;
+                // view not found ... throw exception with paths that were searched...
+                ViewEngineResult getViewResult = razorEngine.GetView(null, partialViewPath, false);
+                IEnumerable<string> searchedPaths = getViewResult.SearchedLocations.Concat(viewEngineResult.SearchedLocations);
+                string errorMessage = string.Join(Environment.NewLine, new[] { $"Unable to find view '{ partialViewPath }'. The following locations were searched:" }.Concat(searchedPaths)); ;
                 throw new InvalidOperationException(errorMessage);
             }
             
@@ -60,11 +60,11 @@ namespace WebApplication1.Helpers
                     view,
                     new ViewDataDictionary<T>(new EmptyModelMetadataProvider(), new ModelStateDictionary())
                     {
-                        Model = model // view data... this is our model that will be used to populate the view.
+                        Model = dataModel // view data... this is our model that will be used to populate the view.
                     }, 
                     new TempDataDictionary(actionContext.HttpContext, tempDataProvider),
                     writer, // text writer.
-                    viewOptions.Value.HtmlHelperOptions
+                    options.Value.HtmlHelperOptions
                 );
 
                 // render the view now using view context that will populate the string writer.
